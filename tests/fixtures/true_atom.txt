@@ -1,0 +1,9 @@
+# true_atom
+
+Python source: erlpack.pack(True)
+
+Wire bytes (7 total):
+    83 73 04 74 72 75 65
+
+Expected Term:
+    Term::Atom("true")

@@ -1,0 +1,9 @@
+# small_int_255
+
+Python source: erlpack.pack(255)
+
+Wire bytes (3 total):
+    83 61 ff
+
+Expected Term:
+    Term::Integer(255)  // SMALL_INTEGER_EXT upper bound

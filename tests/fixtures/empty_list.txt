@@ -1,0 +1,9 @@
+# empty_list
+
+Python source: erlpack.pack([])
+
+Wire bytes (2 total):
+    83 6a
+
+Expected Term:
+    Term::List(vec![])  // bare NIL_EXT byte

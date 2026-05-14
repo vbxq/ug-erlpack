@@ -1,0 +1,9 @@
+# int_256
+
+Python source: erlpack.pack(256)
+
+Wire bytes (6 total):
+    83 62 00 00 01 00
+
+Expected Term:
+    Term::Integer(256)  // INTEGER_EXT (one past SMALL_INTEGER_EXT)

@@ -1,0 +1,9 @@
+# snowflake_8bytes
+
+Python source: erlpack.pack(1234567890123456789)
+
+Wire bytes (12 total):
+    83 6e 08 00 15 81 e9 7d f4 10 22 11
+
+Expected Term:
+    Term::Big { sign: false, digits: 1234567890123456789u64.to_le_bytes().to_vec() }  // SMALL_BIG_EXT n=8 (Discord snowflake canonical case)

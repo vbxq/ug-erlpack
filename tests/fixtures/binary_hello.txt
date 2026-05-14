@@ -1,0 +1,9 @@
+# binary_hello
+
+Python source: erlpack.pack('hello')
+
+Wire bytes (11 total):
+    83 6d 00 00 00 05 68 65 6c 6c 6f
+
+Expected Term:
+    Term::Binary(b"hello".to_vec())  // BINARY_EXT, UTF-8 ASCII

@@ -1,0 +1,9 @@
+# big_2to33
+
+Python source: erlpack.pack(8589934592)
+
+Wire bytes (9 total):
+    83 6e 05 00 00 00 00 00 02
+
+Expected Term:
+    Term::Big { sign: false, digits: vec![0, 0, 0, 0, 2] }  // SMALL_BIG_EXT n=5

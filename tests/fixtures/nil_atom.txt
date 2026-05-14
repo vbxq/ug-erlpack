@@ -1,0 +1,9 @@
+# nil_atom
+
+Python source: erlpack.pack(None)
+
+Wire bytes (6 total):
+    83 73 03 6e 69 6c
+
+Expected Term:
+    Term::Atom("nil")

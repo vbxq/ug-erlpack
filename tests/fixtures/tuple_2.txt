@@ -1,0 +1,9 @@
+# tuple_2
+
+Python source: erlpack.pack((1, 2))
+
+Wire bytes (7 total):
+    83 68 02 61 01 61 02
+
+Expected Term:
+    Term::Tuple(vec![Integer(1), Integer(2)])  // SMALL_TUPLE_EXT arity=2

@@ -1,0 +1,9 @@
+# binary_utf8
+
+Python source: erlpack.pack('café 🎉')
+
+Wire bytes (16 total):
+    83 6d 00 00 00 0a 63 61 66 c3 a9 20 f0 9f 8e 89
+
+Expected Term:
+    Term::Binary("caf\u{e9} \u{1f389}".as_bytes().to_vec())  // BINARY_EXT, multibyte UTF-8

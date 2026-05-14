@@ -1,0 +1,9 @@
+# false_atom
+
+Python source: erlpack.pack(False)
+
+Wire bytes (8 total):
+    83 73 05 66 61 6c 73 65
+
+Expected Term:
+    Term::Atom("false")

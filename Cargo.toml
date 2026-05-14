@@ -1,0 +1,19 @@
+[package]
+name = "ug-erlpack"
+version = "0.1.0"
+edition = "2024"
+description = "ETF (Erlang External Term Format) codec compatible with discord/erlpack"
+
+[features]
+default = ["convert-json"]
+convert-json = ["dep:serde_json"]
+
+[dependencies]
+thiserror = { workspace = true }
+serde_json = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

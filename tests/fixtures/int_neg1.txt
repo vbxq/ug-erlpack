@@ -1,0 +1,9 @@
+# int_neg1
+
+Python source: erlpack.pack(-1)
+
+Wire bytes (6 total):
+    83 62 ff ff ff ff
+
+Expected Term:
+    Term::Integer(-1)  // INTEGER_EXT (negative)

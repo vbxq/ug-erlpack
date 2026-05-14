@@ -1,0 +1,9 @@
+# int_max_i32
+
+Python source: erlpack.pack(2147483647)
+
+Wire bytes (6 total):
+    83 62 7f ff ff ff
+
+Expected Term:
+    Term::Integer(i32::MAX)  // INTEGER_EXT upper bound

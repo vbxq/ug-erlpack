@@ -1,0 +1,9 @@
+# small_int_0
+
+Python source: erlpack.pack(0)
+
+Wire bytes (3 total):
+    83 61 00
+
+Expected Term:
+    Term::Integer(0)  // SMALL_INTEGER_EXT path

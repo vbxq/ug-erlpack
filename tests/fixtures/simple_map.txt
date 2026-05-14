@@ -1,0 +1,9 @@
+# simple_map
+
+Python source: erlpack.pack({'op': 10, 'd': None})
+
+Wire bytes (26 total):
+    83 74 00 00 00 02 6d 00 00 00 02 6f 70 61 0a 6d 00 00 00 01 64 73 03 6e 69 6c
+
+Expected Term:
+    Term::Map(vec![(Binary(b"op"), Integer(10)), (Binary(b"d"), Atom("nil"))])  // OP 10 HELLO shape (illustrative)
