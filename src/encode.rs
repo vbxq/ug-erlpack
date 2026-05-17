@@ -4,18 +4,18 @@ use thiserror::Error;
 
 use crate::term::Term;
 
-const NEW_FLOAT_EXT: u8 = 70;
-const SMALL_INTEGER_EXT: u8 = 97;
-const INTEGER_EXT: u8 = 98;
+pub(crate) const NEW_FLOAT_EXT: u8 = 70;
+pub(crate) const SMALL_INTEGER_EXT: u8 = 97;
+pub(crate) const INTEGER_EXT: u8 = 98;
 const SMALL_TUPLE_EXT: u8 = 104;
 const LARGE_TUPLE_EXT: u8 = 105;
-const NIL_EXT: u8 = 106;
-const LIST_EXT: u8 = 108;
-const BINARY_EXT: u8 = 109;
-const SMALL_BIG_EXT: u8 = 110;
-const SMALL_ATOM_EXT: u8 = 115;
-const MAP_EXT: u8 = 116;
-const VERSION_BYTE: u8 = 131;
+pub(crate) const NIL_EXT: u8 = 106;
+pub(crate) const LIST_EXT: u8 = 108;
+pub(crate) const BINARY_EXT: u8 = 109;
+pub(crate) const SMALL_BIG_EXT: u8 = 110;
+pub(crate) const SMALL_ATOM_EXT: u8 = 115;
+pub(crate) const MAP_EXT: u8 = 116;
+pub(crate) const VERSION_BYTE: u8 = 131;
 
 #[derive(Debug, Error)]
 pub enum EncodeError {
