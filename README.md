@@ -59,4 +59,4 @@ This will change, but here's our current TODO list :
 
 ## License
 
-Per workspace.
+BSD 3-Clause License
