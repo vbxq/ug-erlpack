@@ -2,16 +2,16 @@
 
 #![forbid(unsafe_code)]
 
-pub mod term;
-pub mod encode;
 pub mod decode;
+pub mod encode;
+pub mod term;
 
 #[cfg(feature = "convert-json")]
 pub mod convert;
 
+pub use decode::{DecodeConfig, DecodeError, decode, decode_with};
+pub use encode::{EncodeError, encode};
 pub use term::Term;
-pub use encode::{encode, EncodeError};
-pub use decode::{decode, decode_with, DecodeError, DecodeConfig};
 
 #[cfg(feature = "convert-json")]
-pub use convert::{to_value, from_value, ConvertError};
+pub use convert::{ConvertError, from_value, to_value};

@@ -1,4 +1,4 @@
-use ug_erlpack::{decode, decode_with, DecodeConfig, DecodeError};
+use ug_erlpack::{DecodeConfig, DecodeError, decode, decode_with};
 
 #[test]
 fn bad_version_byte() {

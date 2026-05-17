@@ -1,4 +1,4 @@
-use ug_erlpack::{decode, encode, Term};
+use ug_erlpack::{Term, decode, encode};
 
 struct Lcg {
     state: u64,
