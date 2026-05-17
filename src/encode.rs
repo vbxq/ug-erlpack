@@ -47,7 +47,7 @@ pub fn encode(term: &Term) -> Result<Vec<u8>, EncodeError> {
     Ok(output)
 }
 
-fn encode_term(term: &Term, output: &mut Vec<u8>) -> Result<(), EncodeError> {
+pub(crate) fn encode_term(term: &Term, output: &mut Vec<u8>) -> Result<(), EncodeError> {
     match term {
         Term::Atom(s) => encode_atom(s, output),
         Term::Integer(n) => {
