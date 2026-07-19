@@ -9,10 +9,9 @@ with [`discord/erlpack`](https://github.com/discord/erlpack).
 
 The Discord desktop client connects to the gateway with
 `?encoding=etf` and expects ETF frames on the WebSocket; this crate
-is the codec that path will eventually use. Web and mobile clients use `?encoding=json` and are already  served by the existing JSON path.
+is the codec that path is using. Web and mobile clients use `?encoding=json` and are already  served by the existing JSON path.
 
-This crate is part of Celeste, a reimplementation of Discord's backend. It is published here as a library; gateway integration is
-not yet wired and is tracked separately.
+This crate is part of Celeste, a reimplementation of Discord's backend, it is published here as a library.
 
 ## Quick example
 
@@ -45,17 +44,8 @@ We match `discord/erlpack`'s emit choices byte-for-byte on every fixture we gene
 
 ## Status
 
-**V1, library-only!**  
-This will change, but here's our current TODO list :
-
-- The Celeste gateway still serves
-  `encoding=json` only. Wiring this crate into the
-  `?encoding=etf` path is a separate workstream (and hasn't been scheduled yet)
-- Validation against a real Discord client : the crate is
-  wire-compatible with upstream `erlpack` on every case we generate;
-  whether the official Discord desktop client connects, IDENTIFYs,
-  RESUMEs, and receives events correctly over `encoding=etf` against
-  Celeste is unverified.
+- The Celeste gateway serves both `encoding=json` and `?encoding=etf` with this
+- Validation against a real Discord desktop client : done!
 
 ## License
 

@@ -3,6 +3,10 @@ use std::string::FromUtf8Error;
 use serde_json::{Number, Value};
 use thiserror::Error;
 
+use crate::encode::{
+    BINARY_EXT, EncodeError, INTEGER_EXT, LIST_EXT, MAP_EXT, NEW_FLOAT_EXT, NIL_EXT,
+    SMALL_ATOM_EXT, SMALL_BIG_EXT, SMALL_INTEGER_EXT, VERSION_BYTE,
+};
 use crate::term::Term;
 
 #[derive(Debug, Error)]
@@ -204,4 +208,135 @@ fn u64_to_big_digits(n: u64) -> Vec<u8> {
         digits.pop();
     }
     digits
+}
+
+pub fn encode_value(value: &Value) -> Result<Vec<u8>, EncodeError> {
+    let mut out = Vec::new();
+    out.push(VERSION_BYTE);
+    encode_value_into(value, &mut out)?;
+    Ok(out)
+}
+
+pub fn encode_value_into(value: &Value, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+    match value {
+        Value::Null => {
+            write_small_atom(out, b"nil");
+            Ok(())
+        }
+        Value::Bool(true) => {
+            write_small_atom(out, b"true");
+            Ok(())
+        }
+        Value::Bool(false) => {
+            write_small_atom(out, b"false");
+            Ok(())
+        }
+        Value::Number(n) => {
+            write_number(n, out);
+            Ok(())
+        }
+        Value::String(s) => write_binary(out, s.as_bytes()),
+        Value::Array(arr) => write_list(arr, out),
+        Value::Object(obj) => write_map(obj, out),
+    }
+}
+
+fn write_small_atom(out: &mut Vec<u8>, bytes: &[u8]) {
+    let len = u8::try_from(bytes.len()).expect("static atom byte length fits in u8");
+    out.push(SMALL_ATOM_EXT);
+    out.push(len);
+    out.extend_from_slice(bytes);
+}
+
+fn write_number(n: &Number, out: &mut Vec<u8>) {
+    if let Some(v) = n.as_i64() {
+        if let Ok(v32) = i32::try_from(v) {
+            if (0..=255).contains(&v32) {
+                let v8 = u8::try_from(v32).expect("0..=255 fits in u8");
+                out.push(SMALL_INTEGER_EXT);
+                out.push(v8);
+            } else {
+                out.push(INTEGER_EXT);
+                out.extend_from_slice(&v32.to_be_bytes());
+            }
+            return;
+        }
+        let (sign_byte, magnitude) = if v < 0 {
+            (1u8, v.unsigned_abs())
+        } else {
+            (0u8, u64::try_from(v).expect("v >= 0 fits in u64"))
+        };
+        write_small_big(sign_byte, magnitude, out);
+        return;
+    }
+    if let Some(v) = n.as_u64() {
+        write_small_big(0u8, v, out);
+        return;
+    }
+    let f = n
+        .as_f64()
+        .expect("serde_json::Number::as_f64 returns Some for JSON-derived numbers");
+    out.push(NEW_FLOAT_EXT);
+    out.extend_from_slice(&f.to_bits().to_be_bytes());
+}
+
+fn write_small_big(sign_byte: u8, magnitude: u64, out: &mut Vec<u8>) {
+    let bytes = magnitude.to_le_bytes();
+    let mut len: usize = 8;
+    while len > 0 && bytes[len - 1] == 0 {
+        len -= 1;
+    }
+    let len_u8 = u8::try_from(len).expect("len <= 8 fits in u8");
+    out.push(SMALL_BIG_EXT);
+    out.push(len_u8);
+    out.push(sign_byte);
+    out.extend_from_slice(&bytes[..len]);
+}
+
+fn write_binary(out: &mut Vec<u8>, bytes: &[u8]) -> Result<(), EncodeError> {
+    let Ok(len_u32) = u32::try_from(bytes.len()) else {
+        return Err(EncodeError::BinaryTooLong {
+            byte_len: bytes.len(),
+        });
+    };
+    out.push(BINARY_EXT);
+    out.extend_from_slice(&len_u32.to_be_bytes());
+    out.extend_from_slice(bytes);
+    Ok(())
+}
+
+fn write_list(arr: &[Value], out: &mut Vec<u8>) -> Result<(), EncodeError> {
+    if arr.is_empty() {
+        out.push(NIL_EXT);
+        return Ok(());
+    }
+    let Ok(arity_u32) = u32::try_from(arr.len()) else {
+        return Err(EncodeError::ContainerTooLong {
+            kind: "list",
+            arity: arr.len(),
+        });
+    };
+    out.push(LIST_EXT);
+    out.extend_from_slice(&arity_u32.to_be_bytes());
+    for item in arr {
+        encode_value_into(item, out)?;
+    }
+    out.push(NIL_EXT);
+    Ok(())
+}
+
+fn write_map(obj: &serde_json::Map<String, Value>, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+    let Ok(arity_u32) = u32::try_from(obj.len()) else {
+        return Err(EncodeError::ContainerTooLong {
+            kind: "map",
+            arity: obj.len(),
+        });
+    };
+    out.push(MAP_EXT);
+    out.extend_from_slice(&arity_u32.to_be_bytes());
+    for (k, v) in obj {
+        write_binary(out, k.as_bytes())?;
+        encode_value_into(v, out)?;
+    }
+    Ok(())
 }
