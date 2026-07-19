@@ -35,10 +35,12 @@ const SMALL_ATOM_UTF8_EXT: u8 = 119;
 const VERSION_BYTE: u8 = 131;
 
 const DEFAULT_BIG_DIGIT_CEILING: u32 = 64;
+const DEFAULT_MAX_DEPTH: u32 = 32;
 
 #[derive(Clone, Debug)]
 pub struct DecodeConfig {
     pub big_digit_ceiling: u32,
+    pub max_depth: u32,
 }
 
 impl DecodeConfig {
@@ -50,12 +52,18 @@ impl DecodeConfig {
         self.big_digit_ceiling = max_bytes;
         self
     }
+    #[must_use]
+    pub fn with_max_depth(mut self, max_depth: u32) -> Self {
+        self.max_depth = max_depth;
+        self
+    }
 }
 
 impl Default for DecodeConfig {
     fn default() -> Self {
         Self {
             big_digit_ceiling: DEFAULT_BIG_DIGIT_CEILING,
+            max_depth: DEFAULT_MAX_DEPTH,
         }
     }
 }
@@ -86,6 +94,12 @@ pub enum DecodeError {
     },
     #[error("LIST_EXT tail tag {tail_tag} != NIL_EXT at offset {offset}")]
     ImproperList { tail_tag: u8, offset: usize },
+    #[error("nesting depth {depth} exceeds max_depth {ceiling} at offset {offset}")]
+    MaxDepthExceeded {
+        depth: u32,
+        ceiling: u32,
+        offset: usize,
+    },
     #[error("atom UTF-8 validation failed at offset {offset}: {source}")]
     AtomInvalidUtf8 {
         offset: usize,
@@ -107,6 +121,7 @@ impl DecodeError {
             Self::UnexpectedEof { .. } => "unexpected_eof",
             Self::BigDigitCeilingExceeded { .. } => "big_digit_ceiling_exceeded",
             Self::ImproperList { .. } => "improper_list",
+            Self::MaxDepthExceeded { .. } => "max_depth_exceeded",
             Self::AtomInvalidUtf8 { .. } => "atom_invalid_utf8",
             Self::LegacyFloatParseFailed { .. } => "legacy_float_parse_failed",
         }
@@ -123,7 +138,7 @@ pub fn decode_with(bytes: &[u8], cfg: &DecodeConfig) -> Result<(Term, usize), De
     if version != VERSION_BYTE {
         return Err(DecodeError::BadVersion { found: version });
     }
-    let term = decode_term(&mut reader)?;
+    let term = decode_term(&mut reader, 0)?;
     Ok((term, reader.offset))
 }
 
@@ -209,7 +224,14 @@ impl<'a> Reader<'a> {
     }
 }
 
-fn decode_term(reader: &mut Reader) -> Result<Term, DecodeError> {
+fn decode_term(reader: &mut Reader, depth: u32) -> Result<Term, DecodeError> {
+    if depth > reader.cfg.max_depth {
+        return Err(DecodeError::MaxDepthExceeded {
+            depth,
+            ceiling: reader.cfg.max_depth,
+            offset: reader.offset,
+        });
+    }
     let tag_offset = reader.offset;
     let tag = reader.read_u8()?;
     match tag {
@@ -218,16 +240,16 @@ fn decode_term(reader: &mut Reader) -> Result<Term, DecodeError> {
         INTEGER_EXT => decode_integer(reader),
         FLOAT_EXT => decode_legacy_float(reader, tag_offset),
         ATOM_EXT => decode_atom_latin1_long(reader),
-        SMALL_TUPLE_EXT => decode_small_tuple(reader),
-        LARGE_TUPLE_EXT => decode_large_tuple(reader),
+        SMALL_TUPLE_EXT => decode_small_tuple(reader, depth),
+        LARGE_TUPLE_EXT => decode_large_tuple(reader, depth),
         NIL_EXT => Ok(Term::List(Vec::new())),
         STRING_EXT => decode_string_ext(reader),
-        LIST_EXT => decode_list(reader),
+        LIST_EXT => decode_list(reader, depth),
         BINARY_EXT => decode_binary(reader),
         SMALL_BIG_EXT => decode_small_big(reader, tag_offset),
         LARGE_BIG_EXT => decode_large_big(reader, tag_offset),
         SMALL_ATOM_EXT => decode_small_atom_latin1(reader),
-        MAP_EXT => decode_map(reader),
+        MAP_EXT => decode_map(reader, depth),
         ATOM_UTF8_EXT => decode_atom_utf8(reader),
         SMALL_ATOM_UTF8_EXT => decode_small_atom_utf8(reader),
         COMPRESSED => Err(DecodeError::CompressedNotSupported { offset: tag_offset }),
@@ -309,21 +331,21 @@ fn latin1_to_string(bytes: &[u8]) -> String {
     bytes.iter().map(|&b| char::from(b)).collect()
 }
 
-fn decode_small_tuple(reader: &mut Reader) -> Result<Term, DecodeError> {
+fn decode_small_tuple(reader: &mut Reader, depth: u32) -> Result<Term, DecodeError> {
     let arity = usize::from(reader.read_u8()?);
-    decode_tuple_elements(reader, arity)
+    decode_tuple_elements(reader, arity, depth)
 }
 
-fn decode_large_tuple(reader: &mut Reader) -> Result<Term, DecodeError> {
+fn decode_large_tuple(reader: &mut Reader, depth: u32) -> Result<Term, DecodeError> {
     let arity = reader.read_u32_be()? as usize;
-    decode_tuple_elements(reader, arity)
+    decode_tuple_elements(reader, arity, depth)
 }
 
-fn decode_tuple_elements(reader: &mut Reader, arity: usize) -> Result<Term, DecodeError> {
+fn decode_tuple_elements(reader: &mut Reader, arity: usize, depth: u32) -> Result<Term, DecodeError> {
     let cap = arity.min(reader.remaining());
     let mut elems = Vec::with_capacity(cap);
     for _ in 0..arity {
-        elems.push(decode_term(reader)?);
+        elems.push(decode_term(reader, depth + 1)?);
     }
     Ok(Term::Tuple(elems))
 }
@@ -335,12 +357,12 @@ fn decode_string_ext(reader: &mut Reader) -> Result<Term, DecodeError> {
     Ok(Term::List(elems))
 }
 
-fn decode_list(reader: &mut Reader) -> Result<Term, DecodeError> {
+fn decode_list(reader: &mut Reader, depth: u32) -> Result<Term, DecodeError> {
     let arity = reader.read_u32_be()? as usize;
     let cap = arity.min(reader.remaining());
     let mut elems = Vec::with_capacity(cap);
     for _ in 0..arity {
-        elems.push(decode_term(reader)?);
+        elems.push(decode_term(reader, depth + 1)?);
     }
     let tail_offset = reader.offset;
     let tail_tag = reader.read_u8()?;
@@ -399,13 +421,13 @@ fn decode_large_big(reader: &mut Reader, tag_offset: usize) -> Result<Term, Deco
     })
 }
 
-fn decode_map(reader: &mut Reader) -> Result<Term, DecodeError> {
+fn decode_map(reader: &mut Reader, depth: u32) -> Result<Term, DecodeError> {
     let arity = reader.read_u32_be()? as usize;
     let cap = arity.min(reader.remaining() / 2);
     let mut entries = Vec::with_capacity(cap);
     for _ in 0..arity {
-        let k = decode_term(reader)?;
-        let v = decode_term(reader)?;
+        let k = decode_term(reader, depth + 1)?;
+        let v = decode_term(reader, depth + 1)?;
         entries.push((k, v));
     }
     Ok(Term::Map(entries))
