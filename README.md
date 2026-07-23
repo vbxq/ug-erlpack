@@ -49,4 +49,7 @@ We match `discord/erlpack`'s emit choices byte-for-byte on every fixture we gene
 
 ## License
 
-BSD 3-Clause License
+<a href="COPYING"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/AGPLv3_Logo.svg/1280px-AGPLv3_Logo.svg.png" alt="GNU Affero General Public License v3" width="240"></a>
+
+ug-erlpack is free software released under the
+[GNU Affero General Public License v3](COPYING).
